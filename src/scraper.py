@@ -120,12 +120,3 @@ class GitHub:
 
         logger.info("Extra info: %s", extra)
         return extra
-
-
-if __name__ == "__main__":
-    github = GitHub()
-    extra = github.extract_extra_info(
-        url="https://github.com/atuldjadhav/DropBox-Cloud-Storage",
-        proxies=["194.126.37.94:8080"],
-    )
-    github.close()
