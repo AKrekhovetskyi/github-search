@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from secrets import choice
 from time import sleep
@@ -63,7 +63,7 @@ class GitHub:
             use_cache_dir=True,
         )
         self._request_datetime = datetime.now(UTC)
-        self._delay_seconds = 2
+        self._delay = timedelta(seconds=2)
 
     def close(self) -> None:
         self.session.close()
@@ -71,8 +71,10 @@ class GitHub:
     def request_page_html(self, url: str, proxies: list[str], params: dict[str, Any] | None = None) -> str:
         """Request GitHub page and return raw HTML."""
         # Simulate human browsing by applying a delay.
-        while self._request_datetime > datetime.now(UTC):
-            sleep(self._delay_seconds)
+        sleep_until = self._request_datetime + self._delay
+        now = datetime.now(UTC)
+        if sleep_until > now:
+            sleep((sleep_until - now).total_seconds())
         proxy = None
         if proxies:
             proxy = choice(proxies)
