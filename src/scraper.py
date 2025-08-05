@@ -62,8 +62,7 @@ class GitHub:
             expire_after=CACHE_TTL_DEV if __debug__ else CACHE_TTL_PROD,
             use_cache_dir=True,
         )
-        self._request_datetime = datetime.now(UTC)
-        self._delay = timedelta(seconds=2)
+        self.dont_request_until = datetime.now(UTC)
 
     def close(self) -> None:
         self.session.close()
@@ -71,22 +70,21 @@ class GitHub:
     def request_page_html(self, url: str, proxies: list[str], params: dict[str, Any] | None = None) -> str:
         """Request GitHub page and return raw HTML."""
         # Simulate human browsing by applying a delay.
-        sleep_until = self._request_datetime + self._delay
         now = datetime.now(UTC)
-        if sleep_until > now:
-            sleep((sleep_until - now).total_seconds())
+        if self.dont_request_until > now:
+            sleep((self.dont_request_until - now).total_seconds())
         proxy = None
         if proxies:
             proxy = choice(proxies)
             proxy = proxy if proxy.startswith("http") else f"http://{proxy}"
-            proxy = {"http": proxy, "https": proxy}
+            proxy = {"https": proxy} if proxy.startswith("https") else {"http": proxy}
             logger.debug("Proxy applied: %s", proxy)
         response = self.session.get(url=url, headers=headers, params=params, proxies=proxy)
 
         if response.status_code > HTTPStatus.BAD_REQUEST:
             logger.warning("\nURL: %s\nStatus code: %d\nParams: %s", response.request.url, response.status_code, params)
 
-        self._request_datetime = datetime.now(UTC)
+        self.dont_request_until += timedelta(seconds=choice([1, 2, 3]))
         return response.text
 
     def extract_urls(self, html: str) -> list[dict[str, str]]:
