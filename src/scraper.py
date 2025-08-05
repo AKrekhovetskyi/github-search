@@ -73,12 +73,13 @@ class GitHub:
         # Simulate human browsing by applying a delay.
         while self._request_datetime > datetime.now(UTC):
             sleep(self._delay_seconds)
+        proxy = None
         if proxies:
             proxy = choice(proxies)
-            prefix = f"http{'s' if proxy.startswith('https') else ''}"
-            self.session.proxies = {prefix: f"{prefix}://{proxy}"}
-            logger.debug("Proxy applied: %s", self.session.proxies)
-        response = self.session.get(url=url, headers=headers, params=params)
+            proxy = proxy if proxy.startswith("http") else f"http://{proxy}"
+            proxy = {"http": proxy, "https": proxy}
+            logger.debug("Proxy applied: %s", proxy)
+        response = self.session.get(url=url, headers=headers, params=params, proxies=proxy)
 
         if response.status_code > HTTPStatus.BAD_REQUEST:
             logger.warning("\nURL: %s\nStatus code: %d\nParams: %s", response.request.url, response.status_code, params)
