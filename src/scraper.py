@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from http import HTTPStatus
 from secrets import choice
+from time import sleep
 from typing import Any, Literal
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urlparse
 
 import requests_cache
-from bs4 import BeautifulSoup, SoupStrainer  # pyright: ignore[reportPrivateImportUsage]
+from bs4 import BeautifulSoup, SoupStrainer, Tag  # pyright: ignore[reportPrivateImportUsage]
 
 from src.logging_config import logging
 from src.settings import CACHE_NAME, CACHE_TTL_DEV, CACHE_TTL_PROD
@@ -51,7 +53,7 @@ class RequestParams:
 
 
 class GitHub:
-    _base_url: str = "https://github.com"
+    base_url: str = "https://github.com"
 
     def __init__(self) -> None:
         # NOTE: Remember to close the session at the end.
@@ -60,28 +62,28 @@ class GitHub:
             expire_after=CACHE_TTL_DEV if __debug__ else CACHE_TTL_PROD,
             use_cache_dir=True,
         )
+        self._request_datetime = datetime.now(UTC)
+        self._delay_seconds = 2
 
     def close(self) -> None:
         self.session.close()
 
-    def search(self, params: RequestParams) -> str:
-        """Perform GitHub search and return raw HTML."""
-        if params.proxies:
-            proxy = choice(params.proxies)
+    def request_page_html(self, url: str, proxies: list[str], params: dict[str, Any] | None = None) -> str:
+        """Request GitHub page and return raw HTML."""
+        # Simulate human browsing by applying a delay.
+        while self._request_datetime > datetime.now(UTC):
+            sleep(self._delay_seconds)
+        if proxies:
+            proxy = choice(proxies)
             prefix = f"http{'s' if proxy.startswith('https') else ''}"
             self.session.proxies = {prefix: f"{prefix}://{proxy}"}
             logger.debug("Proxy applied: %s", self.session.proxies)
-        response = self.session.get(
-            url=f"{self._base_url}/search",
-            headers=headers,
-            params=params.to_dict(),
-        )
+        response = self.session.get(url=url, headers=headers, params=params)
 
         if response.status_code > HTTPStatus.BAD_REQUEST:
-            logger.warning(
-                "\nURL: %s\nStatus code: %d\nParams: %s", response.request.url, response.status_code, params.to_dict()
-            )
+            logger.warning("\nURL: %s\nStatus code: %d\nParams: %s", response.request.url, response.status_code, params)
 
+        self._request_datetime = datetime.now(UTC)
         return response.text
 
     def extract_urls(self, html: str) -> list[dict[str, str]]:
@@ -91,9 +93,39 @@ class GitHub:
             parse_only=SoupStrainer("div", attrs={"data-testid": "results-list"}),
         )
         urls = [
-            {"url": f"{self._base_url}{item.parent.attrs['href']}"}
+            {"url": f"{self.base_url}{item.parent.attrs['href']}"}
             for item in soup.find_all("span", attrs={"class": "search-match"})
             if item.parent and item.parent.name == "a"
         ]
         logger.info("Parsed URLs: %s", urls)
         return urls
+
+    def extract_extra_info(self, url: str, proxies: list[str]) -> dict[str, Any] | None:
+        """Extract owner nic and language statistics."""
+        html = self.request_page_html(url=url, proxies=proxies)
+        extra = {"owner": urlparse(url).path.split("/")[1], "language_stats": {}}
+        soup = BeautifulSoup(
+            html,
+            "lxml",
+            parse_only=SoupStrainer("div", attrs={"class": "Layout-sidebar"}),
+        )
+        languages = soup.find(string="Languages")
+        if not languages or not isinstance(languages.parent, Tag) or not isinstance(languages.parent.parent, Tag):
+            return None
+        for li in languages.parent.parent.find_all("li"):
+            if not li or not isinstance(li, Tag):
+                continue
+            spans = li.find_all("span")
+            extra["language_stats"][spans[0].text] = spans[1].text
+
+        logger.info("Extra info: %s", extra)
+        return extra
+
+
+if __name__ == "__main__":
+    github = GitHub()
+    extra = github.extract_extra_info(
+        url="https://github.com/atuldjadhav/DropBox-Cloud-Storage",
+        proxies=["194.126.37.94:8080"],
+    )
+    github.close()
