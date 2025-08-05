@@ -30,10 +30,10 @@ Populate the [`input.json`](./input.json) file with the required query parameter
 To run the search script, use the following command:
 
 ```sh
-dotenv run -- python -m src.search input.json
+dotenv run -- python -m src.search input.json search_results.json
 ```
 
-Your can replace `input.json` with the path to your input file containing search parameters.
+Your can replace both `input.json` and `search_results.json` arguments with the paths to the desirable input and output files.
 
 Add [-O](https://docs.python.org/3/using/cmdline.html#cmdoption-O) flag to the command above if the script is supposed to be run in production.
 
