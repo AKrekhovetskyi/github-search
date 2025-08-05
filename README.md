@@ -25,13 +25,15 @@ Simple GitHub search engine.
 
 ## Usage
 
+Populate the [`input.json`](./input.json) file with the required query parameters.
+
 To run the search script, use the following command:
 
 ```sh
 dotenv run -- python -m src.search input.json
 ```
 
-Replace `input.json` with the path to your input file containing search parameters.
+Your can replace `input.json` with the path to your input file containing search parameters.
 
 Add [-O](https://docs.python.org/3/using/cmdline.html#cmdoption-O) flag to the command above if the script is supposed to be run in production.
 
