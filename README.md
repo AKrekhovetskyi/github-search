@@ -16,7 +16,7 @@ Simple GitHub search engine.
    ```
 1. Create an `.env` file from [`.env.sample`](./.env.sample) and set the necessary variables
    ```bash
-   mv .env.sample .env
+   cp .env.sample .env
    ```
 1. Sometimes it might be necessary to export the following environment variable:
    ```bash
