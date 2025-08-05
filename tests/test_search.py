@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from json import dumps
+from json import dumps, loads
 from pathlib import Path
 from unittest.mock import patch
 
@@ -30,6 +30,11 @@ def test_main(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
         patch.object(GitHub, "extract_extra_info", return_value={"owner": ""}),
     ):
         main()
+
+    search_results = loads(output_file.read_bytes())
+    assert search_results
+    assert isinstance(search_results[0], dict)
+    assert "extra" in search_results[0]
 
     # Assert log contains expected text.
     assert any("Parsed URLs: [{'url': 'https://github.com" in message for message in caplog.messages)
