@@ -7,7 +7,7 @@ Simple GitHub search engine.
 1. Ensure you have Python 3.13 installed.
 1. Clone the repository:
    ```sh
-   git clone  --recurse-submodules https://github.com/AKrekhovetskyi/github-search.git
+   git clone --recurse-submodules https://github.com/AKrekhovetskyi/github-search.git
    cd github-search
    ```
 1. Install dependencies (make sure to install them in your local virtual environment):
