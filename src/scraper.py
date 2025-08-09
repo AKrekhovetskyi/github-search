@@ -8,10 +8,12 @@ from urllib.parse import urljoin, urlparse
 
 import requests_cache
 from bs4 import BeautifulSoup, SoupStrainer, Tag  # pyright: ignore[reportPrivateImportUsage]
+from fake_useragent import UserAgent
 
 from src.logging_config import logging
 from src.settings import CACHE_NAME, CACHE_TTL_DEV, CACHE_TTL_PROD
 
+ua = UserAgent()
 logger = logging.getLogger(__name__)
 headers = {
     "accept": (
@@ -32,10 +34,7 @@ headers = {
     "sec-fetch-site": "same-origin",
     "sec-fetch-user": "?1",
     "upgrade-insecure-requests": "1",
-    "user-agent": (
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0"
-    ),
+    "user-agent": ua.random,
 }
 
 type GitHubSearchTypes = Literal["repositories", "issues", "wikis"]
