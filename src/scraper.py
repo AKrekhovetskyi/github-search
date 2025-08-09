@@ -4,7 +4,7 @@ from http import HTTPStatus
 from secrets import choice
 from time import sleep
 from typing import Any, Literal
-from urllib.parse import quote_plus, urljoin, urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests_cache
 from bs4 import BeautifulSoup, SoupStrainer, Tag  # pyright: ignore[reportPrivateImportUsage]
@@ -49,7 +49,7 @@ class RequestParams:
     type: GitHubSearchTypes = field(default="repositories")
 
     def to_dict(self) -> dict[str, Any]:
-        return {"q": quote_plus(" ".join(self.keywords)), "type": self.type}
+        return {"q": " ".join(self.keywords), "type": self.type}
 
 
 class GitHub:
