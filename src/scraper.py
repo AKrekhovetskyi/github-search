@@ -122,10 +122,15 @@ class GitHub:
         languages = soup.find(string="Languages")
         if not languages or not isinstance(languages.parent, Tag) or not isinstance(languages.parent.parent, Tag):
             return None
+        language_and_percentage = 2
         for li in languages.parent.parent.find_all("li"):
-            if not li or not isinstance(li, Tag):
+            if (
+                not li
+                or not isinstance(li, Tag)
+                or not (spans := li.find_all("span"))
+                or len(spans) < language_and_percentage
+            ):
                 continue
-            spans = li.find_all("span")
             extra["language_stats"][spans[0].text] = spans[1].text
 
         logger.info("Extra info: %s", extra)
