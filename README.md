@@ -25,7 +25,7 @@ Simple GitHub search engine.
 
 ## Usage
 
-Populate the [`input.json`](./input.json) file with the required query parameters.
+Populate the [`input.json`](./input.json) file with the required query parameters (see [`RequestParams`](./src/scraper.py) for details).
 
 To run the search script, use the following command:
 
