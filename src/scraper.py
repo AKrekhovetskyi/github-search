@@ -56,12 +56,12 @@ class GitHub:
     base_url: str = "https://github.com"
 
     def __init__(self, proxies: list[str] | None = None) -> None:
-        # NOTE: Remember to close the session at the end.
         self.session = requests_cache.CachedSession(
             cache_name=CACHE_NAME,
             expire_after=CACHE_TTL_DEV if __debug__ else CACHE_TTL_PROD,
             use_cache_dir=True,
         )
+        """NOTE: Remember to close the session at the end."""
         if proxies:
             self.update_session_proxy(proxies)
         self._dont_request_until = datetime.now(UTC)
