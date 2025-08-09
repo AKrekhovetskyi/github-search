@@ -1,3 +1,4 @@
+import os
 import re
 from collections.abc import Iterator
 from pathlib import Path
@@ -8,10 +9,12 @@ from bs4 import BeautifulSoup
 
 from src.scraper import GitHub, GitHubSearchTypes, RequestParams
 
+TEST_PROXY = os.getenv("TEST_PROXY")
+
 
 @pytest.fixture(scope="module")
 def github() -> Iterator[GitHub]:
-    github_instance = GitHub()
+    github_instance = GitHub(proxies=[TEST_PROXY] if TEST_PROXY else None)
     yield github_instance
     github_instance.close()
 
@@ -22,6 +25,10 @@ def request_params() -> RequestParams:
 
 
 class TestGitHub:
+    @pytest.mark.skipif(
+        not TEST_PROXY,
+        reason="The test performs real requests which require proxy. Set the `TEST_PROXY` environment variable first.",
+    )
     @pytest.mark.parametrize("type_", ["repositories", "issues", "wikis"])
     def test_request_page_html(self, type_: GitHubSearchTypes, github: GitHub, request_params: RequestParams) -> None:
         request_params.type = type_
@@ -29,7 +36,7 @@ class TestGitHub:
         soup = BeautifulSoup(html, "lxml")
         # Look for all text that matches the pattern like: "12 results".
         match = soup.find(string=re.compile(r"\b(\d+)\s+results\b", re.IGNORECASE))
-        assert match is not None, "Expected text like 'X results' not found"
+        assert match is not None, "Expected text like 'X results' not found. Make sure the set proxy isn't blocked."
         number = int(re.search(r"\d+", match).group())  # pyright: ignore[reportCallIssue,reportArgumentType]
         assert number > 1, f"Expected number > 1, got {number}"
 
