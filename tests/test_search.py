@@ -25,7 +25,7 @@ def test_main(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
 
     with (
         patch.object(ArgumentParser, "parse_args", return_value=Namespace),
-        caplog.at_level(logging.INFO),
+        caplog.at_level(logging.DEBUG),
         patch.object(GitHub, "request_page_html", return_value=search_result),
         patch.object(GitHub, "extract_extra_info", return_value={"owner": ""}),
     ):
