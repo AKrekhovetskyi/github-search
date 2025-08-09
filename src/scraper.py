@@ -4,7 +4,7 @@ from http import HTTPStatus
 from secrets import choice
 from time import sleep
 from typing import Any, Literal
-from urllib.parse import quote_plus, urlparse
+from urllib.parse import quote_plus, urljoin, urlparse
 
 import requests_cache
 from bs4 import BeautifulSoup, SoupStrainer, Tag  # pyright: ignore[reportPrivateImportUsage]
@@ -94,9 +94,12 @@ class GitHub:
             parse_only=SoupStrainer("div", attrs={"data-testid": "results-list"}),
         )
         urls = [
-            {"url": f"{self.base_url}{item.parent.attrs['href']}"}
+            {"url": urljoin(self.base_url, href)}
             for item in soup.find_all("span", attrs={"class": "search-match"})
-            if item.parent and item.parent.name == "a"
+            if item.parent
+            and item.parent.name == "a"
+            and (href := item.parent.attrs.get("href"))
+            and isinstance(href, str)
         ]
         logger.info("Parsed URLs: %s", urls)
         return urls
