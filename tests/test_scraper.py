@@ -25,9 +25,7 @@ class TestGitHub:
     @pytest.mark.parametrize("type_", ["repositories", "issues", "wikis"])
     def test_request_page_html(self, type_: GitHubSearchTypes, github: GitHub, request_params: RequestParams) -> None:
         request_params.type = type_
-        html = github.request_page_html(
-            url=f"{github.base_url}/search", proxies=request_params.proxies, params=request_params.to_dict()
-        )
+        html = github.request_page_html(url=f"{github.base_url}/search", params=request_params.to_dict())
         soup = BeautifulSoup(html, "lxml")
         # Look for all text that matches the pattern like: "12 results".
         match = soup.find(string=re.compile(r"\b(\d+)\s+results\b", re.IGNORECASE))
@@ -35,12 +33,18 @@ class TestGitHub:
         number = int(re.search(r"\d+", match).group())  # pyright: ignore[reportCallIssue,reportArgumentType]
         assert number > 1, f"Expected number > 1, got {number}"
 
-    def test_request_page_html_with_proxy(self, github: GitHub, request_params: RequestParams) -> None:
-        github.request_page_html(
-            url=f"{github.base_url}/search",
-            proxies=["194.126.37.94:8080", "13.78.125.167:8080", "64.137.96.74:6641"],
-            params=request_params.to_dict(),
-        )
+    @pytest.mark.parametrize(
+        ("proxy", "set_proxy"),
+        [
+            (["194.126.37.94:8080"], {"http": "http://194.126.37.94:8080"}),
+            (["http://194.126.37.94:8080"], {"http": "http://194.126.37.94:8080"}),
+            (["https://194.126.37.94:8080"], {"https": "https://194.126.37.94:8080"}),
+        ],
+    )
+    def test_update_session_proxy(self, proxy: list[str], set_proxy: dict[str, str], github: GitHub) -> None:
+        github.update_session_proxy(proxies=proxy)
+        assert github.session.proxies == set_proxy
+        github.session.proxies = {}
 
     def test_extract_urls(self, github: GitHub) -> None:
         html = (Path(__file__).parent / "search_result.html").read_text()
@@ -55,7 +59,7 @@ class TestGitHub:
     def test_extract_extra_info(self, github: GitHub) -> None:
         html = (Path(__file__).parent / "repository_sidebar.html").read_text()
         with patch.object(GitHub, "request_page_html", return_value=html):
-            extra_info = github.extract_extra_info("https://github.com/AKrekhovetskyi/github-search", proxies=[])
+            extra_info = github.extract_extra_info("https://github.com/AKrekhovetskyi/github-search")
             assert extra_info == {
                 "owner": "AKrekhovetskyi",
                 "language_stats": {"CSS": "52.0%", "JavaScript": "47.2%", "HTML": "0.8%"},
