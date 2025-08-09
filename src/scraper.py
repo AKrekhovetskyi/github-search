@@ -55,32 +55,35 @@ class RequestParams:
 class GitHub:
     base_url: str = "https://github.com"
 
-    def __init__(self) -> None:
+    def __init__(self, proxies: list[str] | None = None) -> None:
         # NOTE: Remember to close the session at the end.
         self.session = requests_cache.CachedSession(
             cache_name=CACHE_NAME,
             expire_after=CACHE_TTL_DEV if __debug__ else CACHE_TTL_PROD,
             use_cache_dir=True,
         )
+        if proxies:
+            self.update_session_proxy(proxies)
         self._dont_request_until = datetime.now(UTC)
+
+    def update_session_proxy(self, proxies: list[str]) -> None:
+        proxy = choice(proxies)
+        proxy = proxy if proxy.startswith("http") else f"http://{proxy}"
+        proxy = {"https": proxy} if proxy.startswith("https") else {"http": proxy}
+        self.session.proxies.update(proxy)
+        logger.debug("Proxy applied: %s", proxy)
 
     def close(self) -> None:
         self.session.close()
 
-    def request_page_html(self, url: str, proxies: list[str], params: dict[str, Any] | None = None) -> str:
+    def request_page_html(self, url: str, params: dict[str, Any] | None = None) -> str:
         """Request GitHub page and return raw HTML."""
         # Simulate human browsing by applying a delay.
         now = datetime.now(UTC)
         if self._dont_request_until > now:
             sleep((self._dont_request_until - now).total_seconds())
-        proxy = None
-        if proxies:
-            proxy = choice(proxies)
-            proxy = proxy if proxy.startswith("http") else f"http://{proxy}"
-            proxy = {"https": proxy} if proxy.startswith("https") else {"http": proxy}
-            logger.debug("Proxy applied: %s", proxy)
-        response = self.session.get(url=url, headers=headers, params=params, proxies=proxy)
 
+        response = self.session.get(url=url, headers=headers, params=params)
         if response.status_code > HTTPStatus.BAD_REQUEST:
             logger.warning("\nURL: %s\nStatus code: %d\nParams: %s", response.request.url, response.status_code, params)
 
@@ -104,9 +107,9 @@ class GitHub:
         logger.info("Parsed URLs: %s", urls)
         return urls
 
-    def extract_extra_info(self, url: str, proxies: list[str]) -> dict[str, Any] | None:
+    def extract_extra_info(self, url: str) -> dict[str, Any] | None:
         """Extract owner nic and language statistics."""
-        html = self.request_page_html(url=url, proxies=proxies)
+        html = self.request_page_html(url=url)
         extra = {"owner": urlparse(url).path.split("/")[1], "language_stats": {}}
         soup = BeautifulSoup(
             html,
