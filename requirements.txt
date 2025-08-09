@@ -8,6 +8,7 @@ click==8.2.1
 colorlog==6.9.0
 coverage==7.10.2
 distlib==0.4.0
+fake-useragent==2.2.0
 filelock==3.18.0
 identify==2.6.12
 idna==3.10
