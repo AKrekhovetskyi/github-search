@@ -28,7 +28,6 @@ def main() -> None:
             url["extra"] = extra_info  # pyright: ignore[reportArgumentType]
     github.close()
     output_file_path = Path(args.output_file_path)
-    output_file_path.touch()
     output_file_path.write_text(dumps(urls))
 
 
