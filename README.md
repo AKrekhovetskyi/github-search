@@ -47,6 +47,8 @@ dotenv run -- pytest --show-capture=stdout --showlocals -vv -s -rA --cov-fail-un
 
 This will display detailed output for all tests.
 
+> **NOTE:** To run the [`tests/test_scraper.py::TestGitHub::test_request_page_html`](./tests/test_scraper.py) test, assign a working proxy to the `TEST_PROXY` environment variable.
+
 ## Notes
 
 - The project uses [python-dotenv](https://pypi.org/project/python-dotenv/) to manage environment variables.
