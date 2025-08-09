@@ -104,7 +104,10 @@ class GitHub:
             and (href := item.parent.attrs.get("href"))
             and isinstance(href, str)
         ]
-        logger.info("Parsed URLs: %s", urls)
+        if urls:
+            logger.debug("Parsed URLs: %s", urls)
+        else:
+            logger.info("No URLs found!")
         return urls
 
     def extract_extra_info(self, url: str) -> dict[str, Any] | None:
